@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>United Glass — Estimating Discovery</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #0a0e17;
+  --bg-secondary: #111827;
+  --bg-card: #1a2234;
+  --bg-card-hover: #1f2b42;
+  --bg-elevated: #243049;
+  --border: #2d3a52;
+  --border-light: #374463;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-blue: #3b82f6;
+  --accent-blue-dim: #1e40af;
+  --accent-cyan: #06b6d4;
+  --accent-green: #10b981;
+  --accent-yellow: #f59e0b;
+  --accent-orange: #f97316;
+  --accent-red: #ef4444;
+  --accent-purple: #8b5cf6;
+  --accent-pink: #ec4899;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 32px 24px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 30% 0%, rgba(59,130,246,0.08) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 100%, rgba(6,182,212,0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+.header-content { max-width: 800px; margin: 0 auto; position: relative; z-index: 1; }
+.header-badge {
+  display: inline-block;
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.3);
+  color: var(--accent-blue);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+}
+.header h1 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+  max-width: 600px;
+}
+.stable-badge {
+  display: inline-block;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16,185,129,0.3);
+  color: var(--accent-green);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-top: 12px;
+}
+
+/* Progress Bar */
+.progress-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+}
+.progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-card);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.save-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.save-indicator.visible {
+  opacity: 1;
+}
+.save-indicator.saved { color: var(--accent-green); }
+.save-indicator.saving { color: var(--accent-yellow); }
+.save-indicator.error { color: var(--accent-red); }
+.save-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Main Container */
+.main { max-width: 800px; margin: 0 auto; padding: 24px; }
+
+/* Start Screen */
+.start-screen {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px 32px;
+  max-width: 480px;
+  margin: 60px auto;
+}
+.start-screen h2 {
+  font-size: 22px;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+.start-screen p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-family: inherit;
+  transition: border-color var(--transition);
+}
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+.form-group select { cursor: pointer; }
+.form-group select option { background: var(--bg-secondary); color: var(--text-primary); }
+
+.btn-primary {
+  width: 100%;
+  padding: 12px 24px;
+  background: var(--accent-blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), transform 0.1s;
+  margin-top: 8px;
+}
+.btn-primary:hover { background: #2563eb; }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Sections */
+.section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+.section:hover { border-color: var(--border-light); }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  gap: 14px;
+  transition: background var(--transition);
+}
+.section-header:hover { background: var(--bg-card-hover); }
+
+.section-color-bar {
+  width: 4px;
+  height: 28px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.section-1 .section-color-bar { background: var(--accent-blue); }
+.section-2 .section-color-bar { background: var(--accent-cyan); }
+.section-3 .section-color-bar { background: var(--accent-green); }
+.section-4 .section-color-bar { background: var(--accent-yellow); }
+.section-5 .section-color-bar { background: var(--accent-orange); }
+.section-6 .section-color-bar { background: var(--accent-red); }
+.section-7 .section-color-bar { background: var(--accent-purple); }
+.section-8 .section-color-bar { background: var(--accent-pink); }
+.section-9 .section-color-bar { background: var(--accent-cyan); }
+
+.section-title-group { flex: 1; }
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.section-status {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.section-status.complete { color: var(--accent-green); }
+
+.section-chevron {
+  font-size: 18px;
+  color: var(--text-muted);
+  transition: transform var(--transition);
+  flex-shrink: 0;
+}
+.section.expanded .section-chevron { transform: rotate(90deg); }
+
+.section-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.section.expanded .section-body {
+  max-height: 20000px;
+}
+
+.section-content {
+  padding: 0 20px 24px;
+}
+.section-intro {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  border-left: 3px solid var(--border-light);
+  line-height: 1.6;
+}
+
+/* Question Items */
+.q-item { margin-bottom: 20px; }
+.q-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.q-sublabel {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.q-input,
+.q-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color var(--transition);
+}
+.q-input:focus,
+.q-textarea:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+.q-textarea {
+  min-height: 80px;
+  resize: vertical;
+  line-height: 1.5;
+}
+.q-input-short { max-width: 200px; }
+
+/* Inline pair for stage rows */
+.stage-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+}
+.stage-row:hover { border-color: var(--border); }
+.stage-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.stage-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.stage-inputs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.stage-inputs .field { flex: 1; min-width: 120px; }
+.stage-inputs .field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Radios & Checkboxes */
+.radio-group, .checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.radio-option, .checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 13px;
+}
+.radio-option:hover, .checkbox-option:hover {
+  border-color: var(--border-light);
+  background: var(--bg-elevated);
+}
+.radio-option input, .checkbox-option input {
+  accent-color: var(--accent-blue);
+  cursor: pointer;
+}
+.radio-option.selected, .checkbox-option.selected {
+  border-color: var(--accent-blue);
+  background: rgba(59,130,246,0.1);
+}
+
+/* Validation row */
+.validation-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+.validation-statement {
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.validation-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.validation-controls .q-input {
+  flex: 1;
+  min-width: 150px;
+}
+
+/* Buttons bottom */
+.actions-bar {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+.btn-save {
+  padding: 12px 28px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.btn-save:hover { background: var(--border); }
+
+.btn-submit {
+  padding: 12px 28px;
+  background: var(--accent-green);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.btn-submit:hover { background: #059669; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 14px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-green);
+  border-radius: var(--radius);
+  color: var(--accent-green);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+.toast.visible { transform: translateY(0); opacity: 1; }
+.toast.error { border-color: var(--accent-red); color: var(--accent-red); }
+
+/* Footer */
+.footer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+
+/* Separator */
+.q-separator {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .header { padding: 24px 16px 16px; }
+  .header h1 { font-size: 22px; }
+  .main { padding: 16px; }
+  .start-screen { padding: 28px 20px; margin: 32px auto; }
+  .section-header { padding: 14px 16px; }
+  .section-content { padding: 0 16px 20px; }
+  .stage-inputs { flex-direction: column; }
+  .actions-bar { flex-direction: column; }
+  .btn-save, .btn-submit { width: 100%; text-align: center; }
+  .progress-container { padding: 12px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-content">
+    <div class="header-badge">Estimating Discovery</div>
+    <h1>United Glass — Estimating Discovery</h1>
+    <p class="subtitle">Help us understand your process so we can build a tool that saves your team real time.</p>
+    <div class="stable-badge">Powered by Stable Company</div>
+  </div>
+</div>
+
+<!-- Progress (hidden until questionnaire starts) -->
+<div class="progress-container" id="progressContainer" style="display:none;">
+  <div class="progress-bar-bg">
+    <div class="progress-bar-fill" id="progressFill"></div>
+  </div>
+  <div class="progress-text">
+    <span id="progressLabel">0% complete</span>
+    <span class="save-indicator" id="saveIndicator">
+      <span class="save-dot"></span>
+      <span id="saveText">Saved</span>
+    </span>
+  </div>
+</div>
+
+<!-- Start Screen -->
+<div class="main">
+  <div id="startScreen" class="start-screen">
+    <h2>Welcome</h2>
+    <p>Enter your info to begin (or resume where you left off).</p>
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" id="startName" placeholder="Your full name" autocomplete="name">
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="startEmail" placeholder="you@unitedglass.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      <select id="startRole">
+        <option value="">Select your role...</option>
+        <option value="CEO">CEO</option>
+        <option value="Estimator">Estimator</option>
+        <option value="Project Manager">Project Manager</option>
+        <option value="Sales">Sales</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <button class="btn-primary" id="startBtn" onclick="handleStart()">Start Questionnaire</button>
+    <div id="startError" style="color:var(--accent-red);font-size:13px;margin-top:10px;display:none;"></div>
+  </div>
+
+  <!-- Questionnaire (hidden until start) -->
+  <div id="questionnaire" style="display:none;"></div>
+
+  <div id="actionsBar" class="actions-bar" style="display:none;">
+    <button class="btn-save" onclick="handleSaveAndContinue()">Save & Continue Later</button>
+    <button class="btn-submit" onclick="handleFinalSubmit()">Submit Final Responses</button>
+  </div>
+</div>
+
+<div class="footer" id="footer" style="display:none;">
+  Your responses are saved automatically. You can close this page and come back anytime using the same email.
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Supabase Setup ──
+const SUPABASE_URL = 'https://fwxtsfpiqpfxfrbmobix.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3eHRzZnBpcXBmeGZyYm1vYml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNjU3MDUsImV4cCI6MjA4ODk0MTcwNX0.Tj6RxZfBSHNVc1bJDy8vb13xd3J244ESCFqNTrYLM8A';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── State ──
+let respondentName = '';
+let respondentEmail = '';
+let respondentRole = '';
+let responses = {};
+let saveTimer = null;
+let expandedSections = new Set();
+
+// ── Section Definitions ──
+const SECTIONS = [
+  {
+    id: 1, title: 'Time Benchmarks', color: 'section-1',
+    intro: 'We identified 9 stages in your estimating process. We need to know how long each takes TODAY so we can measure what a tool saves you. Answer for a typical mid-size project ($100K\u2013$300K).',
+    questions: [
+      { type: 'stages', id: 'stages', stages: [
+        { id: 'stage_1', name: '1. Bid Intake', desc: 'Create folder, download plans, identify spec sections' },
+        { id: 'stage_2', name: '2. Spec Review', desc: 'Read specs, ID manufacturers and requirements' },
+        { id: 'stage_3', name: '3. Addendum Review', desc: 'Read addendum, assess impact on scope (per addendum)' },
+        { id: 'stage_4', name: '4. Plan Takeoff: Glass', desc: 'Count lites, measure dimensions, ID glass types' },
+        { id: 'stage_5', name: '5. Plan Takeoff: Aluminum', desc: 'ID framing systems, map to products' },
+        { id: 'stage_6', name: '6. Plan Takeoff: Break Metal', desc: 'Measure/calculate flashing and trim' },
+        { id: 'stage_7', name: '7. Vendor Quoting', desc: 'Send takeoffs, receive and iterate quotes (hours active + days waiting)' },
+        { id: 'stage_8', name: '8. Bid Worksheet Assembly', desc: 'Enter costs, calculate tax/markup/totals, price alternates' },
+        { id: 'stage_9', name: '9. Quote Form / Proposal', desc: 'Write proposal, review, finalize' },
+      ]},
+      { type: 'text', id: 'total_hours_small', label: 'Total hours for a small retail project ($10K\u2013$50K)?' },
+      { type: 'text', id: 'total_hours_large', label: 'Total hours for a large government project ($500K+)?' },
+      { type: 'text', id: 'bids_per_month', label: 'How many bids do you work on per month?' },
+      { type: 'text', id: 'win_rate', label: 'Approximate win rate (%)?' },
+    ]
+  },
+  {
+    id: 2, title: 'Markup & Pricing Decisions', color: 'section-2',
+    intro: 'We found markups from 20% to 43% across your projects. Help us understand the logic.',
+    questions: [
+      { type: 'textarea', id: 'markup_logic', label: 'How do you decide the markup % on a given bid? (project type, competition, GC relationship, backlog, complexity \u2014 what matters most?)' },
+      { type: 'textarea', id: 'bid_vs_contract_markup', label: 'We noticed bid markup (20\u201325%) is often lower than contract markup (30\u201335%). Example: Bridgewater Bank bid at 25%, contracted at 35%. How does that work?' },
+      { type: 'textarea', id: 'co_markup', label: 'On change orders, we saw different markup tiers (5\u201310% on small COs, 25\u201330% on larger ones). Are CO markups set by GC contract terms, or do you decide?' },
+      { type: 'text', id: 'pricing_sheet_update_freq', label: 'How often do you update the Material reference pricing sheet?' },
+      { type: 'text', id: 'pricing_sheet_maintainer', label: 'Who maintains it?' },
+      { type: 'radio', id: 'sub_markup', label: 'For subcontracted scope (like Kalwall), what\u2019s your standard markup?', options: ['10%', '15%', '20%', 'Varies', 'Other'] },
+    ]
+  },
+  {
+    id: 3, title: 'Labor Estimation', color: 'section-3',
+    intro: 'The labor hours in your bids feel experience-based. Help us understand the mental model.',
+    questions: [
+      { type: 'radio', id: 'labor_method', label: 'How do you primarily estimate field labor hours?', options: ['Hours per lite/opening', 'Hours per SF', 'Hours per LF of framing', 'Flat hours per system', 'Experience/gut feel', 'Combination'] },
+      { type: 'textarea', id: 'labor_accuracy', label: 'How accurate are the Labor reference sheet benchmarks vs actual? Typical variance?' },
+      { type: 'textarea', id: 'break_metal_labor_variance', label: 'Break metal labor varies wildly (24 hrs to 112 hrs). What drives that?' },
+      { type: 'textarea', id: 'shop_labor_method', label: 'How do you estimate shop labor? (number of sticks, doors, weight?)' },
+      { type: 'radio', id: 'track_actual_labor', label: 'Do you track actual labor hours against estimated?', options: ['Yes consistently', 'Sometimes', 'Rarely', 'No'] },
+      { type: 'text', id: 'labor_data_location', label: 'If yes, where does that data live?' },
+    ]
+  },
+  {
+    id: 4, title: 'The Takeoff Process', color: 'section-4',
+    intro: 'This is where the deepest expertise lives.',
+    questions: [
+      { type: 'textarea', id: 'glass_takeoff_walkthrough', label: 'Walk us through a glass takeoff: what do you look at first? What\u2019s the sequence?' },
+      { type: 'radio', id: 'takeoff_tool', label: 'Primary takeoff tool?', options: ['Bluebeam', 'On-screen takeoff', 'Printed plans + scale', 'Other'] },
+      { type: 'textarea', id: 'break_metal_learning', label: 'Break metal: how does someone learn to do it? Is there a mental checklist?' },
+      { type: 'textarea', id: 'system_selection', label: 'System selection (Kawneer 601T vs 1600UT vs OBE StormMax) \u2014 spec-driven or does UG recommend alternatives?' },
+      { type: 'radio', id: 'kawneer_parts', label: 'Kawneer parts lists \u2014 how much is GDS software vs manual?', options: ['Fully automated', 'GDS does most + some manual', 'Mostly manual', 'Other'] },
+    ]
+  },
+  {
+    id: 5, title: 'Vendor Relationships', color: 'section-5',
+    intro: null,
+    questions: [
+      { type: 'textarea', id: 'obe_why', label: 'OBE is on every project. Why?' },
+      { type: 'textarea', id: 'div8_vs_pbs', label: 'Division 8 vs PBS for brake metal \u2014 how do you decide?' },
+      { type: 'text', id: 'vendor_turnaround', label: 'Typical vendor quote turnaround time?' },
+      { type: 'text', id: 'vendor_revision_rounds', label: 'Average revision rounds per vendor?' },
+      { type: 'radio', id: 'expired_quotes', label: 'Do you get burned by expired quotes?', options: ['Yes it\'s happened', 'Rarely', 'We track them well', 'Not sure'] },
+      { type: 'textarea', id: 'hull_alternatives', label: 'Is Hull Supply the only option for hardware, or are there local alternatives?' },
+    ]
+  },
+  {
+    id: 6, title: 'Pain Points & Wishes', color: 'section-6',
+    intro: null,
+    questions: [
+      { type: 'textarea', id: 'fix_one_thing', label: 'If you could fix ONE thing about estimating, what would it be?' },
+      { type: 'checkbox', id: 'common_mistakes', label: 'Most common mistakes that cost you money?', options: ['Missed scope item', 'Wrong tax rate', 'Expired vendor quote', 'Labor underestimate', 'Addendum change missed', 'Markup too low', 'Markup too high', 'Break metal error', 'Other'] },
+      { type: 'textarea', id: 'takes_too_long', label: 'What takes the longest that feels like it shouldn\u2019t?' },
+      { type: 'radio', id: 'lose_bids_speed', label: 'Do you lose bids because you can\u2019t turn them around fast enough?', options: ['Yes regularly', 'Sometimes', 'Rarely', 'Never'] },
+      { type: 'textarea', id: 'wish_info_at_bid', label: 'What information do you wish you had at bid time?' },
+      { type: 'radio', id: 'excel_satisfaction', label: 'How satisfied are you with the current Excel bid worksheet? (1=Replace it, 5=Love it)', options: ['1', '2', '3', '4', '5'] },
+      { type: 'textarea', id: 'app_wishlist', label: 'If we rebuilt the worksheet as an app, what would you want different?' },
+    ]
+  },
+  {
+    id: 7, title: 'Profitability & Tracking', color: 'section-7',
+    intro: null,
+    questions: [
+      { type: 'radio', id: 'post_project_analysis', label: 'Do you do post-project profitability analysis?', options: ['Yes every job', 'Larger jobs only', 'Sometimes', 'Rarely/Never'] },
+      { type: 'text', id: 'profitability_data_location', label: 'Where does that data live?' },
+      { type: 'textarea', id: 'nw_mutual_vs_wakan', label: 'NW Mutual was most profitable (38.2%), Wakan Tipi lowest (24.2%). Match your gut? Why?' },
+      { type: 'textarea', id: 'tax_rate_method', label: 'How do you determine tax rates for different locations today?' },
+      { type: 'text', id: 'target_margin', label: 'What\u2019s your target gross margin per bid?' },
+      { type: 'text', id: 'overhead_rate', label: 'What\u2019s your approximate overhead/G&A rate?' },
+    ]
+  },
+  {
+    id: 8, title: 'Technology & Tools', color: 'section-8',
+    intro: null,
+    questions: [
+      { type: 'checkbox', id: 'software_used', label: 'Software your team uses:', options: ['Bluebeam', 'GDS (Kawneer)', 'AutoCAD', 'QuickBooks', 'Procore', 'BuildingConnected', 'Excel', 'Outlook', 'Other'] },
+      { type: 'radio', id: 'tech_comfort', label: 'Team\u2019s comfort with new technology (1=resistant, 5=savvy):', options: ['1', '2', '3', '4', '5'] },
+      { type: 'textarea', id: 'email_time', label: 'Where does email time go that a tool could replace?' },
+      { type: 'radio', id: 'existing_databases', label: 'Any existing databases/systems to integrate with?', options: ['Yes (describe below)', 'No it\'s all Excel and email', 'Not sure'] },
+      { type: 'text', id: 'existing_databases_desc', label: 'If yes, describe:' },
+    ]
+  },
+  {
+    id: 9, title: 'Quick Validation', color: 'section-9',
+    intro: 'We derived these from your files. Please confirm or correct.',
+    questions: [
+      { type: 'validation', id: 'validations', items: [
+        { id: 'v_tax_rate', statement: 'Standard MN sales tax: 9.03%' },
+        { id: 'v_field_labor', statement: 'Field labor rate: $97/hr' },
+        { id: 'v_shop_labor', statement: 'Shop labor rate: $76/hr' },
+        { id: 'v_obe_fuel', statement: 'OBE fuel surcharge: ~6.75%' },
+        { id: 'v_materials_markup', statement: 'Standard materials markup: 25%' },
+        { id: 'v_billing_markup', statement: 'Internal billing markup: 30% on cost' },
+        { id: 'v_shop_drawings', statement: 'Shop drawings: $50/sheet' },
+        { id: 'v_insurance', statement: 'Insurance markup: always 0%' },
+        { id: 'v_obe_albertville', statement: 'OBE Albertville is primary glass source' },
+        { id: 'v_aaron', statement: 'Aaron Grangroth does most estimating + shop drawings' },
+        { id: 'v_excel_template', statement: 'Same Excel template used for years' },
+        { id: 'v_kawneer_inhouse', statement: 'Kawneer fabricated in-house (not factory)' },
+        { id: 'v_union_southdale', statement: 'Union required at Southdale Center' },
+        { id: 'v_prevailing_wage', statement: 'Prevailing wage on state/county projects' },
+      ]}
+    ]
+  },
+];
+
+// ── Render ──
+function renderQuestionnaire() {
+  const container = document.getElementById('questionnaire');
+  let html = '';
+  for (const sec of SECTIONS) {
+    const isExpanded = expandedSections.has(sec.id);
+    html += `<div class="section ${sec.color} ${isExpanded ? 'expanded' : ''}" id="section-${sec.id}">
+      <div class="section-header" onclick="toggleSection(${sec.id})">
+        <div class="section-color-bar"></div>
+        <div class="section-title-group">
+          <div class="section-title">${sec.title}</div>
+          <div class="section-status" id="status-${sec.id}">Not started</div>
+        </div>
+        <div class="section-chevron">\u25B6</div>
+      </div>
+      <div class="section-body">
+        <div class="section-content">
+          ${sec.intro ? `<div class="section-intro">${sec.intro}</div>` : ''}
+          ${renderQuestions(sec)}
+        </div>
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+  updateProgress();
+}
+
+function renderQuestions(sec) {
+  let html = '';
+  for (const q of sec.questions) {
+    if (q.type === 'stages') {
+      for (const s of q.stages) {
+        const hVal = responses[s.id + '_hours'] || '';
+        const wVal = responses[s.id + '_who'] || '';
+        html += `<div class="stage-row">
+          <div>
+            <div class="stage-name">${s.name}</div>
+            <div class="stage-desc">${s.desc}</div>
+          </div>
+          <div class="stage-inputs">
+            <div class="field">
+              <label>Hours</label>
+              <input class="q-input" type="text" data-key="${s.id}_hours" value="${esc(hVal)}" oninput="onInput(this)" placeholder="e.g. 2">
+            </div>
+            <div class="field">
+              <label>Who does it?</label>
+              <input class="q-input" type="text" data-key="${s.id}_who" value="${esc(wVal)}" oninput="onInput(this)" placeholder="e.g. Aaron">
+            </div>
+          </div>
+        </div>`;
+      }
+    } else if (q.type === 'validation') {
+      for (const v of q.items) {
+        const rVal = responses[v.id + '_correct'] || '';
+        const cVal = responses[v.id + '_correction'] || '';
+        html += `<div class="validation-row">
+          <div class="validation-statement">${v.statement}</div>
+          <div class="validation-controls">
+            <div class="radio-group">
+              <label class="radio-option ${rVal === 'Correct' ? 'selected' : ''}">
+                <input type="radio" name="${v.id}" value="Correct" ${rVal === 'Correct' ? 'checked' : ''} onchange="onRadio(this, '${v.id}_correct')"> Correct
+              </label>
+              <label class="radio-option ${rVal === 'Not correct' ? 'selected' : ''}">
+                <input type="radio" name="${v.id}" value="Not correct" ${rVal === 'Not correct' ? 'checked' : ''} onchange="onRadio(this, '${v.id}_correct')"> Not correct
+              </label>
+            </div>
+            <input class="q-input" type="text" data-key="${v.id}_correction" value="${esc(cVal)}" oninput="onInput(this)" placeholder="Correction (if needed)">
+          </div>
+        </div>`;
+      }
+    } else if (q.type === 'text') {
+      const val = responses[q.id] || '';
+      html += `<div class="q-item">
+        <div class="q-label">${q.label}</div>
+        <input class="q-input ${q.short ? 'q-input-short' : ''}" type="text" data-key="${q.id}" value="${esc(val)}" oninput="onInput(this)">
+      </div>`;
+    } else if (q.type === 'textarea') {
+      const val = responses[q.id] || '';
+      html += `<div class="q-item">
+        <div class="q-label">${q.label}</div>
+        <textarea class="q-textarea" data-key="${q.id}" oninput="onInput(this)">${esc(val)}</textarea>
+      </div>`;
+    } else if (q.type === 'radio') {
+      const val = responses[q.id] || '';
+      html += `<div class="q-item">
+        <div class="q-label">${q.label}</div>
+        <div class="radio-group">
+          ${q.options.map(o => `<label class="radio-option ${val === o ? 'selected' : ''}">
+            <input type="radio" name="${q.id}" value="${esc(o)}" ${val === o ? 'checked' : ''} onchange="onRadio(this, '${q.id}')"> ${o}
+          </label>`).join('')}
+        </div>
+      </div>`;
+    } else if (q.type === 'checkbox') {
+      const vals = responses[q.id] || [];
+      html += `<div class="q-item">
+        <div class="q-label">${q.label}</div>
+        <div class="checkbox-group">
+          ${q.options.map(o => `<label class="checkbox-option ${vals.includes(o) ? 'selected' : ''}">
+            <input type="checkbox" value="${esc(o)}" ${vals.includes(o) ? 'checked' : ''} onchange="onCheckbox(this, '${q.id}')"> ${o}
+          </label>`).join('')}
+        </div>
+      </div>`;
+    }
+  }
+  return html;
+}
+
+function esc(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Interaction ──
+function toggleSection(id) {
+  if (expandedSections.has(id)) {
+    expandedSections.delete(id);
+  } else {
+    expandedSections.add(id);
+  }
+  const el = document.getElementById('section-' + id);
+  el.classList.toggle('expanded');
+}
+
+function onInput(el) {
+  const key = el.dataset.key;
+  responses[key] = el.value;
+  scheduleSave();
+  updateProgress();
+}
+
+function onRadio(el, key) {
+  responses[key] = el.value;
+  // Update selected styling
+  const group = el.closest('.radio-group');
+  group.querySelectorAll('.radio-option').forEach(opt => {
+    opt.classList.toggle('selected', opt.querySelector('input').checked);
+  });
+  scheduleSave();
+  updateProgress();
+}
+
+function onCheckbox(el, key) {
+  const group = el.closest('.checkbox-group');
+  const checked = [];
+  group.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    if (cb.checked) checked.push(cb.value);
+    cb.closest('.checkbox-option').classList.toggle('selected', cb.checked);
+  });
+  responses[key] = checked;
+  scheduleSave();
+  updateProgress();
+}
+
+// ── Progress ──
+function countFields() {
+  let total = 0;
+  let filled = 0;
+  for (const sec of SECTIONS) {
+    for (const q of sec.questions) {
+      if (q.type === 'stages') {
+        for (const s of q.stages) {
+          total += 2;
+          if (responses[s.id + '_hours']) filled++;
+          if (responses[s.id + '_who']) filled++;
+        }
+      } else if (q.type === 'validation') {
+        for (const v of q.items) {
+          total += 1;
+          if (responses[v.id + '_correct']) filled++;
+        }
+      } else if (q.type === 'checkbox') {
+        total += 1;
+        if (responses[q.id] && responses[q.id].length > 0) filled++;
+      } else {
+        total += 1;
+        if (responses[q.id]) filled++;
+      }
+    }
+  }
+  return { total, filled };
+}
+
+function getSectionProgress(sec) {
+  let total = 0, filled = 0;
+  for (const q of sec.questions) {
+    if (q.type === 'stages') {
+      for (const s of q.stages) {
+        total += 2;
+        if (responses[s.id + '_hours']) filled++;
+        if (responses[s.id + '_who']) filled++;
+      }
+    } else if (q.type === 'validation') {
+      for (const v of q.items) {
+        total += 1;
+        if (responses[v.id + '_correct']) filled++;
+      }
+    } else if (q.type === 'checkbox') {
+      total += 1;
+      if (responses[q.id] && responses[q.id].length > 0) filled++;
+    } else {
+      total += 1;
+      if (responses[q.id]) filled++;
+    }
+  }
+  return { total, filled };
+}
+
+function getLastSectionCompleted() {
+  let last = 0;
+  for (const sec of SECTIONS) {
+    const { total, filled } = getSectionProgress(sec);
+    if (filled === total && total > 0) last = sec.id;
+    else break;
+  }
+  return last;
+}
+
+function updateProgress() {
+  const { total, filled } = countFields();
+  const pct = total === 0 ? 0 : Math.round((filled / total) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = pct + '% complete';
+
+  for (const sec of SECTIONS) {
+    const sp = getSectionProgress(sec);
+    const statusEl = document.getElementById('status-' + sec.id);
+    if (statusEl) {
+      if (sp.filled === 0) {
+        statusEl.textContent = 'Not started';
+        statusEl.className = 'section-status';
+      } else if (sp.filled >= sp.total) {
+        statusEl.textContent = 'Complete';
+        statusEl.className = 'section-status complete';
+      } else {
+        statusEl.textContent = sp.filled + ' of ' + sp.total + ' answered';
+        statusEl.className = 'section-status';
+      }
+    }
+  }
+}
+
+// ── Save ──
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  showSaveStatus('saving');
+  saveTimer = setTimeout(() => doSave(), 1000);
+}
+
+async function doSave() {
+  try {
+    const { data, error } = await supabase
+      .from('ug_questionnaire_responses')
+      .upsert({
+        respondent_email: respondentEmail,
+        respondent_name: respondentName,
+        respondent_role: respondentRole,
+        responses: responses,
+        last_section_completed: getLastSectionCompleted(),
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'respondent_email' });
+    if (error) throw error;
+    showSaveStatus('saved');
+  } catch (e) {
+    console.error('Save error:', e);
+    showSaveStatus('error');
+  }
+}
+
+function showSaveStatus(status) {
+  const indicator = document.getElementById('saveIndicator');
+  const text = document.getElementById('saveText');
+  indicator.className = 'save-indicator visible ' + status;
+  if (status === 'saving') text.textContent = 'Saving...';
+  else if (status === 'saved') text.textContent = 'Saved';
+  else text.textContent = 'Save error';
+
+  if (status === 'saved') {
+    setTimeout(() => { indicator.classList.remove('visible'); }, 2500);
+  }
+}
+
+// ── Start ──
+async function handleStart() {
+  const name = document.getElementById('startName').value.trim();
+  const email = document.getElementById('startEmail').value.trim();
+  const role = document.getElementById('startRole').value;
+  const errEl = document.getElementById('startError');
+
+  if (!name || !email || !role) {
+    errEl.textContent = 'Please fill in all fields.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errEl.textContent = 'Please enter a valid email.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  errEl.style.display = 'none';
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('startBtn').textContent = 'Loading...';
+
+  respondentName = name;
+  respondentEmail = email;
+  respondentRole = role;
+
+  // Try to load existing responses
+  try {
+    const { data, error } = await supabase
+      .from('ug_questionnaire_responses')
+      .select('*')
+      .eq('respondent_email', email)
+      .single();
+
+    if (data && !error) {
+      responses = data.responses || {};
+      respondentName = data.respondent_name || name;
+      respondentRole = data.respondent_role || role;
+      showToast('Welcome back! Your previous responses have been loaded.');
+    } else {
+      // Create new row
+      responses = {};
+      await doSave();
+    }
+  } catch (e) {
+    // No existing row, create one
+    responses = {};
+    await doSave();
+  }
+
+  // Show questionnaire
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('questionnaire').style.display = 'block';
+  document.getElementById('actionsBar').style.display = 'flex';
+  document.getElementById('progressContainer').style.display = 'block';
+  document.getElementById('footer').style.display = 'block';
+
+  // Expand first section by default
+  expandedSections.add(1);
+  renderQuestionnaire();
+}
+
+// ── Actions ──
+async function handleSaveAndContinue() {
+  await doSave();
+  showToast('Your responses have been saved. You can safely close this page.');
+}
+
+async function handleFinalSubmit() {
+  const { total, filled } = countFields();
+  const pct = Math.round((filled / total) * 100);
+
+  if (pct < 100) {
+    if (!confirm(`You've completed ${pct}% of the questionnaire. Submit anyway?`)) return;
+  }
+
+  await doSave();
+  showToast('Thank you! Your responses have been submitted.');
+
+  // Disable all inputs
+  document.querySelectorAll('.q-input, .q-textarea, input[type="radio"], input[type="checkbox"]').forEach(el => {
+    el.disabled = true;
+  });
+  document.getElementById('actionsBar').innerHTML = '<div style="padding:16px 20px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:var(--radius);color:var(--accent-green);font-size:15px;font-weight:500;width:100%;text-align:center;">Responses submitted. Thank you!</div>';
+}
+
+// ── Toast ──
+function showToast(msg, isError) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast visible' + (isError ? ' error' : '');
+  setTimeout(() => { toast.classList.remove('visible'); }, 4000);
+}
+</script>
+</body>
+</html>
