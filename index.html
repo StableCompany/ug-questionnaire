@@ -561,25 +561,14 @@ body {
 <div class="main">
   <div id="startScreen" class="start-screen">
     <h2>Welcome</h2>
-    <p>Enter your info to begin (or resume where you left off).</p>
+    <p>Enter your name and email to begin (or resume where you left off).</p>
     <div class="form-group">
       <label>Name</label>
       <input type="text" id="startName" placeholder="Your full name" autocomplete="name">
     </div>
     <div class="form-group">
       <label>Email</label>
-      <input type="email" id="startEmail" placeholder="you@unitedglass.com" autocomplete="email">
-    </div>
-    <div class="form-group">
-      <label>Role</label>
-      <select id="startRole">
-        <option value="">Select your role...</option>
-        <option value="CEO">CEO</option>
-        <option value="Estimator">Estimator</option>
-        <option value="Project Manager">Project Manager</option>
-        <option value="Sales">Sales</option>
-        <option value="Other">Other</option>
-      </select>
+      <input type="email" id="startEmail" placeholder="you@unitedglassinc.com" autocomplete="email">
     </div>
     <button class="btn-primary" id="startBtn" onclick="handleStart()">Start Questionnaire</button>
     <div id="startError" style="color:var(--accent-red);font-size:13px;margin-top:10px;display:none;"></div>
@@ -605,7 +594,15 @@ body {
 // ── Supabase Setup ──
 const SUPABASE_URL = 'https://fwxtsfpiqpfxfrbmobix.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3eHRzZnBpcXBmeGZyYm1vYml4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNjU3MDUsImV4cCI6MjA4ODk0MTcwNX0.Tj6RxZfBSHNVc1bJDy8vb13xd3J244ESCFqNTrYLM8A';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let supabaseClient = null;
+try {
+  const mod = window.supabase;
+  supabaseClient = mod.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log('Supabase client initialized');
+} catch(e) {
+  console.error('Supabase init failed:', e);
+}
 
 // ── State ──
 let respondentName = '';
@@ -995,7 +992,7 @@ function scheduleSave() {
 
 async function doSave() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('ug_questionnaire_responses')
       .upsert({
         respondent_email: respondentEmail,
@@ -1030,16 +1027,20 @@ function showSaveStatus(status) {
 async function handleStart() {
   const name = document.getElementById('startName').value.trim();
   const email = document.getElementById('startEmail').value.trim();
-  const role = document.getElementById('startRole').value;
   const errEl = document.getElementById('startError');
 
-  if (!name || !email || !role) {
-    errEl.textContent = 'Please fill in all fields.';
+  if (!name || !email) {
+    errEl.textContent = 'Please enter your name and email.';
     errEl.style.display = 'block';
     return;
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errEl.textContent = 'Please enter a valid email.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!supabaseClient) {
+    errEl.textContent = 'Connection error. Please refresh the page and try again.';
     errEl.style.display = 'block';
     return;
   }
@@ -1050,11 +1051,11 @@ async function handleStart() {
 
   respondentName = name;
   respondentEmail = email;
-  respondentRole = role;
+  respondentRole = '';
 
   // Try to load existing responses
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('ug_questionnaire_responses')
       .select('*')
       .eq('respondent_email', email)
@@ -1063,7 +1064,6 @@ async function handleStart() {
     if (data && !error) {
       responses = data.responses || {};
       respondentName = data.respondent_name || name;
-      respondentRole = data.respondent_role || role;
       showToast('Welcome back! Your previous responses have been loaded.');
     } else {
       // Create new row
@@ -1071,9 +1071,19 @@ async function handleStart() {
       await doSave();
     }
   } catch (e) {
+    console.error('Load error:', e);
     // No existing row, create one
     responses = {};
-    await doSave();
+    try {
+      await doSave();
+    } catch(e2) {
+      console.error('Initial save error:', e2);
+      errEl.textContent = 'Error connecting to database. Please try again.';
+      errEl.style.display = 'block';
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('startBtn').textContent = 'Start Questionnaire';
+      return;
+    }
   }
 
   // Show questionnaire
