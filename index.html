@@ -347,45 +347,6 @@ body {
 }
 .q-input-short { max-width: 200px; }
 
-/* Inline pair for stage rows */
-.stage-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-  margin-bottom: 16px;
-  padding: 14px 16px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius);
-  border: 1px solid transparent;
-}
-.stage-row:hover { border-color: var(--border); }
-.stage-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-.stage-desc {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-.stage-inputs {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.stage-inputs .field { flex: 1; min-width: 120px; }
-.stage-inputs .field label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
 /* Radios & Checkboxes */
 .radio-group, .checkbox-group {
   display: flex;
@@ -441,6 +402,67 @@ body {
 .validation-controls .q-input {
   flex: 1;
   min-width: 150px;
+}
+
+/* Slider Styles */
+.slider-row {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.slider-row:last-child { border-bottom: none; }
+.slider-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.slider-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.slider-control {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  cursor: pointer;
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 0 0 2px var(--accent-blue);
+}
+.slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  cursor: pointer;
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 0 0 2px var(--accent-blue);
+}
+.slider-value {
+  min-width: 80px;
+  text-align: right;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-blue);
+  white-space: nowrap;
 }
 
 /* Buttons bottom */
@@ -524,10 +546,11 @@ body {
   .start-screen { padding: 28px 20px; margin: 32px auto; }
   .section-header { padding: 14px 16px; }
   .section-content { padding: 0 16px 20px; }
-  .stage-inputs { flex-direction: column; }
   .actions-bar { flex-direction: column; }
   .btn-save, .btn-submit { width: 100%; text-align: center; }
   .progress-container { padding: 12px 16px; }
+  .slider-control { flex-direction: column; align-items: stretch; gap: 8px; }
+  .slider-value { text-align: left; min-width: unset; }
 }
 </style>
 </head>
@@ -538,7 +561,7 @@ body {
   <div class="header-content">
     <div class="header-badge">Estimating Discovery</div>
     <h1>United Glass — Estimating Discovery</h1>
-    <p class="subtitle">Help us understand your process so we can build a tool that saves your team real time.</p>
+    <p class="subtitle">Help us understand your process so we can build a tool that saves your team real time. Takes about 10 minutes.</p>
     <div class="stable-badge">Powered by Stable Company</div>
   </div>
 </div>
@@ -615,157 +638,60 @@ let expandedSections = new Set();
 // ── Section Definitions ──
 const SECTIONS = [
   {
-    id: 1, title: 'Time Benchmarks', color: 'section-1',
-    intro: 'We identified 9 stages in your estimating process. We need to know how long each takes TODAY so we can measure what a tool saves you. Answer for a typical mid-size project ($100K\u2013$300K).',
+    id: 1, title: 'Time Per Bid Stage', color: 'section-1',
+    intro: 'We mapped your 9-stage estimating process from your project files. How many hours does each stage take today? Slide to your best estimate for a typical mid-size project ($100K\u2013$300K).',
     questions: [
-      { type: 'stages', id: 'stages', stages: [
-        { id: 'stage_1', name: '1. Bid Intake', desc: 'Create folder, download plans, identify spec sections' },
-        { id: 'stage_2', name: '2. Spec Review', desc: 'Read specs, ID manufacturers and requirements' },
-        { id: 'stage_3', name: '3. Addendum Review', desc: 'Read addendum, assess impact on scope (per addendum)' },
-        { id: 'stage_4', name: '4. Plan Takeoff: Glass', desc: 'Count lites, measure dimensions, ID glass types' },
-        { id: 'stage_5', name: '5. Plan Takeoff: Aluminum', desc: 'ID framing systems, map to products' },
-        { id: 'stage_6', name: '6. Plan Takeoff: Break Metal', desc: 'Measure/calculate flashing and trim' },
-        { id: 'stage_7', name: '7. Vendor Quoting', desc: 'Send takeoffs, receive and iterate quotes (hours active + days waiting)' },
-        { id: 'stage_8', name: '8. Bid Worksheet Assembly', desc: 'Enter costs, calculate tax/markup/totals, price alternates' },
-        { id: 'stage_9', name: '9. Quote Form / Proposal', desc: 'Write proposal, review, finalize' },
-      ]},
-      { type: 'text', id: 'total_hours_small', label: 'Total hours for a small retail project ($10K\u2013$50K)?' },
-      { type: 'text', id: 'total_hours_large', label: 'Total hours for a large government project ($500K+)?' },
-      { type: 'text', id: 'bids_per_month', label: 'How many bids do you work on per month?' },
-      { type: 'text', id: 'win_rate', label: 'Approximate win rate (%)?' },
+      { type: 'slider', id: 'hrs_bid_intake', label: 'Bid Intake', desc: 'Create project folder, download plans, identify relevant spec sections', min: 0, max: 8, step: 0.5, unit: 'hrs' },
+      { type: 'slider', id: 'hrs_spec_review', label: 'Spec Review', desc: 'Read spec sections, ID approved manufacturers and performance requirements', min: 0, max: 16, step: 0.5, unit: 'hrs' },
+      { type: 'slider', id: 'hrs_addendum', label: 'Addendum Review (per addendum)', desc: 'Read addendum, figure out what changed, assess downstream impact', min: 0, max: 8, step: 0.5, unit: 'hrs' },
+      { type: 'slider', id: 'hrs_takeoff_glass', label: 'Takeoff: Glass', desc: 'Count lites, measure dimensions, identify glass types from plans', min: 0, max: 24, step: 1, unit: 'hrs' },
+      { type: 'slider', id: 'hrs_takeoff_aluminum', label: 'Takeoff: Aluminum', desc: 'Identify framing systems by location, map to manufacturer products', min: 0, max: 24, step: 1, unit: 'hrs' },
+      { type: 'slider', id: 'hrs_takeoff_breakmetal', label: 'Takeoff: Break Metal', desc: 'Measure and calculate flashing, trim, and closures', min: 0, max: 24, step: 1, unit: 'hrs' },
+      { type: 'slider', id: 'hrs_vendor_quoting', label: 'Vendor Quoting', desc: 'Send takeoffs to vendors, receive quotes, iterate on revisions', min: 0, max: 16, step: 1, unit: 'hrs active' },
+      { type: 'slider', id: 'days_vendor_waiting', label: 'Vendor Quote Wait Time', desc: 'How many days are you typically waiting on vendor quotes?', min: 0, max: 21, step: 1, unit: 'days' },
+      { type: 'slider', id: 'hrs_bid_assembly', label: 'Bid Worksheet Assembly', desc: 'Enter all costs into Excel, calculate tax/markup/totals, price alternates', min: 0, max: 16, step: 0.5, unit: 'hrs' },
+      { type: 'slider', id: 'hrs_proposal', label: 'Quote Form / Proposal', desc: 'Write the proposal document, review, finalize, submit', min: 0, max: 8, step: 0.5, unit: 'hrs' },
+      { type: 'slider', id: 'hrs_change_order', label: 'Change Order Pricing (per CO)', desc: 'When a CO comes in, how long to price it?', min: 0, max: 8, step: 0.5, unit: 'hrs' },
     ]
   },
   {
-    id: 2, title: 'Markup & Pricing Decisions', color: 'section-2',
-    intro: 'We found markups from 20% to 43% across your projects. Help us understand the logic.',
+    id: 2, title: 'Volume & Capacity', color: 'section-3',
+    intro: 'This helps us calculate how much time a tool could save across your whole operation.',
     questions: [
-      { type: 'textarea', id: 'markup_logic', label: 'How do you decide the markup % on a given bid? (project type, competition, GC relationship, backlog, complexity \u2014 what matters most?)' },
-      { type: 'textarea', id: 'bid_vs_contract_markup', label: 'We noticed bid markup (20\u201325%) is often lower than contract markup (30\u201335%). Example: Bridgewater Bank bid at 25%, contracted at 35%. How does that work?' },
-      { type: 'textarea', id: 'co_markup', label: 'On change orders, we saw different markup tiers (5\u201310% on small COs, 25\u201330% on larger ones). Are CO markups set by GC contract terms, or do you decide?' },
-      { type: 'text', id: 'pricing_sheet_update_freq', label: 'How often do you update the Material reference pricing sheet?' },
-      { type: 'text', id: 'pricing_sheet_maintainer', label: 'Who maintains it?' },
-      { type: 'radio', id: 'sub_markup', label: 'For subcontracted scope (like Kalwall), what\u2019s your standard markup?', options: ['10%', '15%', '20%', 'Varies', 'Other'] },
+      { type: 'slider', id: 'bids_per_month', label: 'Bids worked on per month', desc: 'Total bids your team touches in a typical month', min: 1, max: 30, step: 1, unit: 'bids' },
+      { type: 'slider', id: 'win_rate', label: 'Approximate win rate', desc: 'What percentage of bids do you win?', min: 5, max: 80, step: 5, unit: '%' },
+      { type: 'slider', id: 'cos_per_project', label: 'Change orders per active project', desc: 'Average number of COs on a typical won project', min: 0, max: 15, step: 1, unit: 'COs' },
+      { type: 'radio', id: 'turning_away_work', label: 'Are you currently turning away work or missing bid deadlines because of capacity?', options: ['Yes, regularly', 'Sometimes', 'Rarely', 'No'] },
+      { type: 'textarea', id: 'capacity_bottleneck', label: 'If you could bid faster, could you take on more work? What\u2019s the bottleneck today?' },
+      { type: 'slider', id: 'more_bids_possible', label: 'If estimating took half the time, how many MORE bids could you do per month?', desc: '', min: 0, max: 15, step: 1, unit: 'additional bids' },
     ]
   },
   {
-    id: 3, title: 'Labor Estimation', color: 'section-3',
-    intro: 'The labor hours in your bids feel experience-based. Help us understand the mental model.',
+    id: 3, title: 'Pain Points & Priorities', color: 'section-6',
+    intro: 'Help us focus on what matters most to you.',
     questions: [
-      { type: 'radio', id: 'labor_method', label: 'How do you primarily estimate field labor hours?', options: ['Hours per lite/opening', 'Hours per SF', 'Hours per LF of framing', 'Flat hours per system', 'Experience/gut feel', 'Combination'] },
-      { type: 'textarea', id: 'labor_accuracy', label: 'How accurate are the Labor reference sheet benchmarks vs actual? Typical variance?' },
-      { type: 'textarea', id: 'break_metal_labor_variance', label: 'Break metal labor varies wildly (24 hrs to 112 hrs). What drives that?' },
-      { type: 'textarea', id: 'shop_labor_method', label: 'How do you estimate shop labor? (number of sticks, doors, weight?)' },
-      { type: 'radio', id: 'track_actual_labor', label: 'Do you track actual labor hours against estimated?', options: ['Yes consistently', 'Sometimes', 'Rarely', 'No'] },
-      { type: 'text', id: 'labor_data_location', label: 'If yes, where does that data live?' },
-    ]
-  },
-  {
-    id: 4, title: 'The Takeoff Process', color: 'section-4',
-    intro: 'This is where the deepest expertise lives.',
-    questions: [
-      { type: 'textarea', id: 'glass_takeoff_walkthrough', label: 'Walk us through a glass takeoff: what do you look at first? What\u2019s the sequence?' },
-      { type: 'radio', id: 'takeoff_tool', label: 'Primary takeoff tool?', options: ['Bluebeam', 'On-screen takeoff', 'Printed plans + scale', 'Other'] },
-      { type: 'textarea', id: 'break_metal_learning', label: 'Break metal: how does someone learn to do it? Is there a mental checklist?' },
-      { type: 'textarea', id: 'system_selection', label: 'System selection (Kawneer 601T vs 1600UT vs OBE StormMax) \u2014 spec-driven or does UG recommend alternatives?' },
-      { type: 'radio', id: 'kawneer_parts', label: 'Kawneer parts lists \u2014 how much is GDS software vs manual?', options: ['Fully automated', 'GDS does most + some manual', 'Mostly manual', 'Other'] },
-    ]
-  },
-  {
-    id: 5, title: 'Vendor Relationships', color: 'section-5',
-    intro: null,
-    questions: [
-      { type: 'textarea', id: 'obe_why', label: 'OBE is on every project. Why?' },
-      { type: 'textarea', id: 'div8_vs_pbs', label: 'Division 8 vs PBS for brake metal \u2014 how do you decide?' },
-      { type: 'text', id: 'vendor_turnaround', label: 'Typical vendor quote turnaround time?' },
-      { type: 'text', id: 'vendor_revision_rounds', label: 'Average revision rounds per vendor?' },
-      { type: 'radio', id: 'expired_quotes', label: 'Do you get burned by expired quotes?', options: ['Yes it\'s happened', 'Rarely', 'We track them well', 'Not sure'] },
-      { type: 'textarea', id: 'hull_alternatives', label: 'Is Hull Supply the only option for hardware, or are there local alternatives?' },
-    ]
-  },
-  {
-    id: 6, title: 'Pain Points & Wishes', color: 'section-6',
-    intro: null,
-    questions: [
-      { type: 'textarea', id: 'fix_one_thing', label: 'If you could fix ONE thing about estimating, what would it be?' },
-      { type: 'checkbox', id: 'common_mistakes', label: 'Most common mistakes that cost you money?', options: ['Missed scope item', 'Wrong tax rate', 'Expired vendor quote', 'Labor underestimate', 'Addendum change missed', 'Markup too low', 'Markup too high', 'Break metal error', 'Other'] },
+      { type: 'textarea', id: 'fix_one_thing', label: 'If you could fix ONE thing about your estimating process, what would it be?' },
+      { type: 'checkbox', id: 'common_mistakes', label: 'Which of these have cost you money in the last year? (check all that apply)', options: ['Missed a scope item', 'Wrong tax rate for the location', 'Vendor quote expired before we used it', 'Underestimated labor hours', 'Missed an addendum change', 'Bid too low and won at bad margin', 'Bid too high and lost', 'Break metal takeoff error', 'Couldn\u2019t turn bid around fast enough'] },
+      { type: 'radio', id: 'lose_bids_speed', label: 'How often do you lose bids because you couldn\u2019t turn them around fast enough?', options: ['Regularly', 'Sometimes', 'Rarely', 'Never'] },
       { type: 'textarea', id: 'takes_too_long', label: 'What takes the longest that feels like it shouldn\u2019t?' },
-      { type: 'radio', id: 'lose_bids_speed', label: 'Do you lose bids because you can\u2019t turn them around fast enough?', options: ['Yes regularly', 'Sometimes', 'Rarely', 'Never'] },
-      { type: 'textarea', id: 'wish_info_at_bid', label: 'What information do you wish you had at bid time?' },
-      { type: 'radio', id: 'excel_satisfaction', label: 'How satisfied are you with the current Excel bid worksheet? (1=Replace it, 5=Love it)', options: ['1', '2', '3', '4', '5'] },
-      { type: 'textarea', id: 'app_wishlist', label: 'If we rebuilt the worksheet as an app, what would you want different?' },
+      { type: 'radio', id: 'excel_satisfaction', label: 'How do you feel about the current Excel bid worksheet?', options: ['1 \u2014 Ready to replace it', '2 \u2014 It\u2019s frustrating', '3 \u2014 It works but could be better', '4 \u2014 It\u2019s pretty good', '5 \u2014 Love it, don\u2019t change it'] },
+      { type: 'textarea', id: 'cost_recording', label: 'Where do actual project costs get recorded today \u2014 accounting software, timesheets, spreadsheets? Could we pull an export to compare estimated vs. actual?' },
     ]
   },
   {
-    id: 7, title: 'Profitability & Tracking', color: 'section-7',
-    intro: null,
-    questions: [
-      { type: 'radio', id: 'post_project_analysis', label: 'Do you do post-project profitability analysis?', options: ['Yes every job', 'Larger jobs only', 'Sometimes', 'Rarely/Never'] },
-      { type: 'text', id: 'profitability_data_location', label: 'Where does that data live?' },
-      { type: 'textarea', id: 'cost_recording', label: 'Where do actual project costs get recorded today \u2014 accounting software, timesheets, spreadsheets, or some combination? Is there an export or report we could pull for a few completed jobs to compare estimated vs. actual costs?' },
-      { type: 'textarea', id: 'nw_mutual_vs_wakan', label: 'NW Mutual was most profitable (38.2%), Wakan Tipi lowest (24.2%). Match your gut? Why?' },
-      { type: 'textarea', id: 'tax_rate_method', label: 'How do you determine tax rates for different locations today?' },
-      { type: 'text', id: 'target_margin', label: 'What\u2019s your target gross margin per bid?' },
-      { type: 'text', id: 'overhead_rate', label: 'What\u2019s your approximate overhead/G&A rate?' },
-    ]
-  },
-  {
-    id: 8, title: 'Revisions & Change Orders', color: 'section-8',
-    intro: 'We saw projects like Hennepin County YCC with 11 change orders, each requiring a new pricing worksheet. Understanding this workflow is key.',
-    questions: [
-      { type: 'textarea', id: 'co_reuse', label: 'When a change order or scope revision comes in on an active project, how much of the original estimate can you reuse vs. how much do you have to rebuild from scratch?' },
-      { type: 'text', id: 'co_hours_vs_original', label: 'Roughly how many hours does a typical revision take compared to the original bid?' },
-      { type: 'textarea', id: 'co_biggest_pain', label: 'What\u2019s the most frustrating part of pricing a change order?' },
-    ]
-  },
-  {
-    id: 9, title: 'Technology, Tools & Portals', color: 'section-9',
-    intro: null,
-    questions: [
-      { type: 'checkbox', id: 'software_used', label: 'Software your team uses:', options: ['Bluebeam', 'GDS (Kawneer)', 'AutoCAD', 'QuickBooks', 'Procore', 'BuildingConnected', 'iSqFt', 'StratusVue', 'PlanHub', 'SmartBidNet', 'Excel', 'Outlook', 'Other'] },
-      { type: 'radio', id: 'tech_comfort', label: 'Team\u2019s comfort with new technology (1=resistant, 5=savvy):', options: ['1', '2', '3', '4', '5'] },
-      { type: 'textarea', id: 'gc_portal_formats', label: 'When you submit a bid, do any GCs require you to use a specific platform (BuildingConnected, iSqFt, Procore, etc.) \u2014 and does that change the format of what you submit?' },
-      { type: 'textarea', id: 'email_time', label: 'Where does email time go that a tool could replace?' },
-      { type: 'radio', id: 'existing_databases', label: 'Any existing databases/systems to integrate with?', options: ['Yes (describe below)', 'No it\'s all Excel and email', 'Not sure'] },
-      { type: 'text', id: 'existing_databases_desc', label: 'If yes, describe:' },
-    ]
-  },
-  {
-    id: 10, title: 'Process Flow & Handoffs', color: 'section-1',
-    intro: 'Understanding where work gets stuck or waits on someone helps us find the biggest efficiency gains.',
-    questions: [
-      { type: 'textarea', id: 'stuck_example', label: 'Walk us through a time where a bid or project got stuck because someone was waiting on information from someone else internally. What was the information, and how did it eventually get resolved?' },
-      { type: 'textarea', id: 'handoff_gaps', label: 'When a bid moves from estimating to project management to field, what information tends to get lost or has to be re-created?' },
-      { type: 'textarea', id: 'circle_back', label: 'Are there steps in your process where someone regularly has to "circle back" to get info they should have had up front?' },
-    ]
-  },
-  {
-    id: 11, title: 'Vendor Pricing Trends', color: 'section-5',
-    intro: null,
-    questions: [
-      { type: 'textarea', id: 'vendor_pricing_changes', label: 'Have your vendors changed how they share pricing in the last couple of years \u2014 are published price sheets harder to get, or are they pushing you toward quote-by-quote pricing only?' },
-      { type: 'textarea', id: 'obe_pricing_access', label: 'Specifically with OBE/Oldcastle: do you have access to a price list or multiplier schedule, or is every project a fresh quote request?' },
-      { type: 'radio', id: 'price_sheet_availability', label: 'Overall, how would you describe vendor price transparency today vs. 2-3 years ago?', options: ['More transparent', 'About the same', 'Less transparent / more quote-by-quote', 'Varies by vendor'] },
-    ]
-  },
-  {
-    id: 12, title: 'Quick Validation', color: 'section-2',
-    intro: 'We derived these from your files. Please confirm or correct.',
+    id: 4, title: 'Quick Validation', color: 'section-2',
+    intro: 'We pulled these from your actual project files. Just confirm or correct \u2014 takes 30 seconds.',
     questions: [
       { type: 'validation', id: 'validations', items: [
-        { id: 'v_tax_rate', statement: 'Standard MN sales tax: 9.03%' },
-        { id: 'v_field_labor', statement: 'Field labor rate: $97/hr' },
-        { id: 'v_shop_labor', statement: 'Shop labor rate: $76/hr' },
-        { id: 'v_obe_fuel', statement: 'OBE fuel surcharge: ~6.75%' },
+        { id: 'v_field_labor', statement: 'Current field labor rate: $97/hr' },
+        { id: 'v_shop_labor', statement: 'Current shop labor rate: $76/hr' },
+        { id: 'v_tax_rate', statement: 'Standard MN sales tax used: 9.03%' },
         { id: 'v_materials_markup', statement: 'Standard materials markup: 25%' },
         { id: 'v_billing_markup', statement: 'Internal billing markup: 30% on cost' },
-        { id: 'v_shop_drawings', statement: 'Shop drawings: $50/sheet' },
-        { id: 'v_insurance', statement: 'Insurance markup: always 0%' },
-        { id: 'v_obe_albertville', statement: 'OBE Albertville is primary glass source' },
-        { id: 'v_aaron', statement: 'Aaron Grangroth does most estimating + shop drawings' },
-        { id: 'v_excel_template', statement: 'Same Excel template used for years' },
-        { id: 'v_kawneer_inhouse', statement: 'Kawneer fabricated in-house (not factory)' },
-        { id: 'v_union_southdale', statement: 'Union required at Southdale Center' },
-        { id: 'v_prevailing_wage', statement: 'Prevailing wage on state/county projects' },
+        { id: 'v_obe_fuel', statement: 'OBE fuel surcharge: ~6.75%' },
+        { id: 'v_obe_albertville', statement: 'OBE Albertville is your primary glass source' },
+        { id: 'v_excel_template', statement: 'Same Excel bid template has been used for years' },
+        { id: 'v_kawneer_inhouse', statement: 'You fabricate Kawneer storefront in-house (not factory fab)' },
       ]}
     ]
   },
@@ -801,27 +727,16 @@ function renderQuestionnaire() {
 function renderQuestions(sec) {
   let html = '';
   for (const q of sec.questions) {
-    if (q.type === 'stages') {
-      for (const s of q.stages) {
-        const hVal = responses[s.id + '_hours'] || '';
-        const wVal = responses[s.id + '_who'] || '';
-        html += `<div class="stage-row">
-          <div>
-            <div class="stage-name">${s.name}</div>
-            <div class="stage-desc">${s.desc}</div>
-          </div>
-          <div class="stage-inputs">
-            <div class="field">
-              <label>Hours</label>
-              <input class="q-input" type="text" data-key="${s.id}_hours" value="${esc(hVal)}" oninput="onInput(this)" placeholder="e.g. 2">
-            </div>
-            <div class="field">
-              <label>Who does it?</label>
-              <input class="q-input" type="text" data-key="${s.id}_who" value="${esc(wVal)}" oninput="onInput(this)" placeholder="e.g. Aaron">
-            </div>
-          </div>
-        </div>`;
-      }
+    if (q.type === 'slider') {
+      const val = responses[q.id] !== undefined ? responses[q.id] : Math.round((q.min + q.max) / 2 / q.step) * q.step;
+      html += `<div class="slider-row">
+        <div class="slider-label">${q.label}</div>
+        ${q.desc ? `<div class="slider-desc">${q.desc}</div>` : ''}
+        <div class="slider-control">
+          <input type="range" class="slider" min="${q.min}" max="${q.max}" step="${q.step}" value="${val}" data-key="${q.id}" oninput="onSlider(this)">
+          <div class="slider-value"><span id="val-${q.id}">${val}</span> ${q.unit}</div>
+        </div>
+      </div>`;
     } else if (q.type === 'validation') {
       for (const v of q.items) {
         const rVal = responses[v.id + '_correct'] || '';
@@ -901,6 +816,15 @@ function onInput(el) {
   updateProgress();
 }
 
+function onSlider(el) {
+  const key = el.dataset.key;
+  const val = el.value;
+  responses[key] = val;
+  document.getElementById('val-' + key).textContent = val;
+  scheduleSave();
+  updateProgress();
+}
+
 function onRadio(el, key) {
   responses[key] = el.value;
   // Update selected styling
@@ -929,39 +853,20 @@ function countFields() {
   let total = 0;
   let filled = 0;
   for (const sec of SECTIONS) {
-    for (const q of sec.questions) {
-      if (q.type === 'stages') {
-        for (const s of q.stages) {
-          total += 2;
-          if (responses[s.id + '_hours']) filled++;
-          if (responses[s.id + '_who']) filled++;
-        }
-      } else if (q.type === 'validation') {
-        for (const v of q.items) {
-          total += 1;
-          if (responses[v.id + '_correct']) filled++;
-        }
-      } else if (q.type === 'checkbox') {
-        total += 1;
-        if (responses[q.id] && responses[q.id].length > 0) filled++;
-      } else {
-        total += 1;
-        if (responses[q.id]) filled++;
-      }
-    }
+    const sp = countSectionFields(sec);
+    total += sp.total;
+    filled += sp.filled;
   }
   return { total, filled };
 }
 
-function getSectionProgress(sec) {
-  let total = 0, filled = 0;
+function countSectionFields(sec) {
+  let total = 0;
+  let filled = 0;
   for (const q of sec.questions) {
-    if (q.type === 'stages') {
-      for (const s of q.stages) {
-        total += 2;
-        if (responses[s.id + '_hours']) filled++;
-        if (responses[s.id + '_who']) filled++;
-      }
+    if (q.type === 'slider') {
+      total += 1;
+      if (responses[q.id] !== undefined) filled++;
     } else if (q.type === 'validation') {
       for (const v of q.items) {
         total += 1;
@@ -976,6 +881,10 @@ function getSectionProgress(sec) {
     }
   }
   return { total, filled };
+}
+
+function getSectionProgress(sec) {
+  return countSectionFields(sec);
 }
 
 function getLastSectionCompleted() {
@@ -1145,7 +1054,7 @@ async function handleFinalSubmit() {
   showToast('Thank you! Your responses have been submitted.');
 
   // Disable all inputs
-  document.querySelectorAll('.q-input, .q-textarea, input[type="radio"], input[type="checkbox"]').forEach(el => {
+  document.querySelectorAll('.q-input, .q-textarea, input[type="radio"], input[type="checkbox"], .slider').forEach(el => {
     el.disabled = true;
   });
   document.getElementById('actionsBar').innerHTML = '<div style="padding:16px 20px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:var(--radius);color:var(--accent-green);font-size:15px;font-weight:500;width:100%;text-align:center;">Responses submitted. Thank you!</div>';
