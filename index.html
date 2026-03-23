@@ -701,6 +701,7 @@ const SECTIONS = [
     questions: [
       { type: 'radio', id: 'post_project_analysis', label: 'Do you do post-project profitability analysis?', options: ['Yes every job', 'Larger jobs only', 'Sometimes', 'Rarely/Never'] },
       { type: 'text', id: 'profitability_data_location', label: 'Where does that data live?' },
+      { type: 'textarea', id: 'cost_recording', label: 'Where do actual project costs get recorded today \u2014 accounting software, timesheets, spreadsheets, or some combination? Is there an export or report we could pull for a few completed jobs to compare estimated vs. actual costs?' },
       { type: 'textarea', id: 'nw_mutual_vs_wakan', label: 'NW Mutual was most profitable (38.2%), Wakan Tipi lowest (24.2%). Match your gut? Why?' },
       { type: 'textarea', id: 'tax_rate_method', label: 'How do you determine tax rates for different locations today?' },
       { type: 'text', id: 'target_margin', label: 'What\u2019s your target gross margin per bid?' },
@@ -708,18 +709,46 @@ const SECTIONS = [
     ]
   },
   {
-    id: 8, title: 'Technology & Tools', color: 'section-8',
+    id: 8, title: 'Revisions & Change Orders', color: 'section-8',
+    intro: 'We saw projects like Hennepin County YCC with 11 change orders, each requiring a new pricing worksheet. Understanding this workflow is key.',
+    questions: [
+      { type: 'textarea', id: 'co_reuse', label: 'When a change order or scope revision comes in on an active project, how much of the original estimate can you reuse vs. how much do you have to rebuild from scratch?' },
+      { type: 'text', id: 'co_hours_vs_original', label: 'Roughly how many hours does a typical revision take compared to the original bid?' },
+      { type: 'textarea', id: 'co_biggest_pain', label: 'What\u2019s the most frustrating part of pricing a change order?' },
+    ]
+  },
+  {
+    id: 9, title: 'Technology, Tools & Portals', color: 'section-9',
     intro: null,
     questions: [
-      { type: 'checkbox', id: 'software_used', label: 'Software your team uses:', options: ['Bluebeam', 'GDS (Kawneer)', 'AutoCAD', 'QuickBooks', 'Procore', 'BuildingConnected', 'Excel', 'Outlook', 'Other'] },
+      { type: 'checkbox', id: 'software_used', label: 'Software your team uses:', options: ['Bluebeam', 'GDS (Kawneer)', 'AutoCAD', 'QuickBooks', 'Procore', 'BuildingConnected', 'iSqFt', 'StratusVue', 'PlanHub', 'SmartBidNet', 'Excel', 'Outlook', 'Other'] },
       { type: 'radio', id: 'tech_comfort', label: 'Team\u2019s comfort with new technology (1=resistant, 5=savvy):', options: ['1', '2', '3', '4', '5'] },
+      { type: 'textarea', id: 'gc_portal_formats', label: 'When you submit a bid, do any GCs require you to use a specific platform (BuildingConnected, iSqFt, Procore, etc.) \u2014 and does that change the format of what you submit?' },
       { type: 'textarea', id: 'email_time', label: 'Where does email time go that a tool could replace?' },
       { type: 'radio', id: 'existing_databases', label: 'Any existing databases/systems to integrate with?', options: ['Yes (describe below)', 'No it\'s all Excel and email', 'Not sure'] },
       { type: 'text', id: 'existing_databases_desc', label: 'If yes, describe:' },
     ]
   },
   {
-    id: 9, title: 'Quick Validation', color: 'section-9',
+    id: 10, title: 'Process Flow & Handoffs', color: 'section-1',
+    intro: 'Understanding where work gets stuck or waits on someone helps us find the biggest efficiency gains.',
+    questions: [
+      { type: 'textarea', id: 'stuck_example', label: 'Walk us through a time where a bid or project got stuck because someone was waiting on information from someone else internally. What was the information, and how did it eventually get resolved?' },
+      { type: 'textarea', id: 'handoff_gaps', label: 'When a bid moves from estimating to project management to field, what information tends to get lost or has to be re-created?' },
+      { type: 'textarea', id: 'circle_back', label: 'Are there steps in your process where someone regularly has to "circle back" to get info they should have had up front?' },
+    ]
+  },
+  {
+    id: 11, title: 'Vendor Pricing Trends', color: 'section-5',
+    intro: null,
+    questions: [
+      { type: 'textarea', id: 'vendor_pricing_changes', label: 'Have your vendors changed how they share pricing in the last couple of years \u2014 are published price sheets harder to get, or are they pushing you toward quote-by-quote pricing only?' },
+      { type: 'textarea', id: 'obe_pricing_access', label: 'Specifically with OBE/Oldcastle: do you have access to a price list or multiplier schedule, or is every project a fresh quote request?' },
+      { type: 'radio', id: 'price_sheet_availability', label: 'Overall, how would you describe vendor price transparency today vs. 2-3 years ago?', options: ['More transparent', 'About the same', 'Less transparent / more quote-by-quote', 'Varies by vendor'] },
+    ]
+  },
+  {
+    id: 12, title: 'Quick Validation', color: 'section-2',
     intro: 'We derived these from your files. Please confirm or correct.',
     questions: [
       { type: 'validation', id: 'validations', items: [
